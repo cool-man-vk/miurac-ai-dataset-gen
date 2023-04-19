@@ -1,0 +1,55 @@
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { Button, TextInput } from '@mantine/core';
+import { firebaseApp } from './firebase';
+
+type SignupFormData = {
+  email: string;
+  password: string;
+};
+
+export const SignupForm: React.FC = () => {
+  const { register, handleSubmit, errors } = useForm<SignupFormData>();
+
+  const onSubmit = async (data: SignupFormData) => {
+    try {
+      await firebaseApp.auth().createUserWithEmailAndPassword(data.email, data.password);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <TextInput
+        label="Email"
+        name="email"
+        type="email"
+        error={errors.email?.message}
+        inputRef={register({
+          required: 'Email is required',
+          pattern: {
+            value: /^\S+@\S+$/i,
+            message: 'Invalid email address',
+          },
+        })}
+      />
+
+      <TextInput
+        label="Password"
+        name="password"
+        type="password"
+        error={errors.password?.message}
+        inputRef={register({
+          required: 'Password is required',
+          minLength: {
+            value: 6,
+            message: 'Password must be at least 6 characters',
+          },
+        })}
+      />
+
+      <Button type="submit">Sign up</Button>
+    </form>
+  );
+};
