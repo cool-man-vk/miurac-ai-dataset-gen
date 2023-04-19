@@ -1,55 +1,189 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { Button, TextInput } from '@mantine/core';
-import { firebaseApp } from './firebase';
+import image from '../../images/image.svg';
+import googleIcon from '../../images/icons/google.svg';
+import { TextInput , Divider , PasswordInput , Button } from '@mantine/core';
+import Footer from '../../layout/Footer';
+import { signInWithPopup , createUserWithEmailAndPassword , GoogleAuthProvider , getAuth, sendEmailVerification } from 'firebase/auth';
+import { useState } from 'react';
+import * as yup from 'yup';
+import { useForm, yupResolver } from '@mantine/form';
+import { showNotification } from '@mantine/notifications';
 
-type SignupFormData = {
-  email: string;
-  password: string;
-};
 
-export const SignupForm: React.FC = () => {
-  const { register, handleSubmit, errors } = useForm<SignupFormData>();
 
-  const onSubmit = async (data: SignupFormData) => {
-    try {
-      await firebaseApp.auth().createUserWithEmailAndPassword(data.email, data.password);
-    } catch (error) {
-      console.error(error);
+
+interface signUpProps {
+    clickFunction: () => void
+}
+
+const schema = yup.object().shape({
+    email: yup.string().email('Please enter a valid email address').required('Enter valid email'),
+    password: yup.string().required().min(8, 'Password must be atleast 8 characters').max(16, 'Password must not exceed 16 characters').matches(
+      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/,
+      "Password can't be empty"
+    )
+  }).required();
+
+
+export default function Signup(clickFunction : signUpProps){
+    const [email , setEmail] = useState('');
+    const [password , setPassword] = useState('');
+    const [confirmPassword , setConfirmPassword] = useState('');
+
+    const form = useForm({
+        validate: yupResolver(schema),
+            initialValues: {
+                email: '',
+                password: '',
+                confirmPassword : ''
+            }
+    });
+
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+
+    
+
+    const switchLogin = () => {
+        clickFunction.clickFunction();
     }
-  };
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <TextInput
-        label="Email"
-        name="email"
-        type="email"
-        error={errors.email?.message}
-        inputRef={register({
-          required: 'Email is required',
-          pattern: {
-            value: /^\S+@\S+$/i,
-            message: 'Invalid email address',
-          },
-        })}
-      />
 
-      <TextInput
-        label="Password"
-        name="password"
-        type="password"
-        error={errors.password?.message}
-        inputRef={register({
-          required: 'Password is required',
-          minLength: {
-            value: 6,
-            message: 'Password must be at least 6 characters',
-          },
-        })}
-      />
+    const signUpWithGoogle = () => {
+        try {
+            signInWithPopup(auth , provider);
+        } catch (error : any) {
+            alert(error.message);
+            showNotification({
+                id: `reg-err-${Math.random()}`,
+                autoClose: 5000,
+                title: "Error",
+                message: error.toString(),
+                color: 'red',
+                loading: false,
+              });
+        }
+    }
+    return(
+        <div>
+            <div className='md:p-[2%] h-auto w-full bg-[#E0E6EC] flex justify-center items-center xd:flex-col xd:h-auto'>
+                <div className='h-auto w-[100%] md:w-[75%] md:h-[90vh] mx-auto grid grid-cols-1 md:grid-cols-2 bg-white md:rounded-[15px]'>
+                    <div
+                        className='flex-col-reverse md:flex-col flex justify-center items-center text-center'>
+                        <img src={image} alt="image pic" />
+                        <h5 className='font-bold text-[22px] p-3'>Build your next unicorn with us!</h5>
+                    </div>
+                    <div className='bg-[#F0F3F8] flex justify-center items-center md:rounded-tr-[10px] md:rounded-br-[10px]'
 
-      <Button type="submit">Sign up</Button>
-    </form>
-  );
-};
+                        >
+                        <div className='w-[90%] mx-auto flex flex-col justify-center items-center p-[12px]'>
+                            <h5 className='font[20px] font-bold text-center'>Create Your Account</h5>
+                            <button
+                                onClick={signUpWithGoogle}
+                                className='m-5 rounded-[10px] bg-white px-4 py-2 flex text-[14px] font-[600]'>
+                                    <img src={googleIcon} alt="google" />
+                                    &nbsp;&nbsp;&nbsp;Sign Up with Google
+                            </button>
+                            <Divider label="OR" my="xs" labelPosition="center"/>
+                            <div className='w-full justify-center items-center'>
+                                <form
+                                    className='flex flex-col items-center'
+                                    onSubmit={
+                                        form.onSubmit(
+                                            (values) => {
+                                                try {
+                                                    if(password === confirmPassword){
+                                                      try {
+                                                          createUserWithEmailAndPassword(auth , values.email , values.password).then(
+                                                              (userCred) => {
+                                                                  const user = userCred.user;
+                                                                  sendEmailVerification(user);
+                                                                  alert("Email sent successfully!");
+                                                                
+                                                              }
+                                                          );
+
+                                                      } catch (error : any) {
+                                                          alert(error.message);
+                                                      }
+                                                  } else {
+                                                      alert('Passwords do not match');
+                                                  }
+                                                } catch(err) {
+                                                    alert(err)
+                                                }
+                                            }
+                                        )
+                                    }
+                                >
+                                <TextInput
+                                    withAsterisk
+                                    style = {{
+                                                padding:'8px',
+                                                fontSize:'16px',
+                                                fontWeight:'600',
+                                                outline:'none',
+                                                margin:'10px',
+
+                                            }}
+                                            className='w-[300px] md:w-[350px]'
+                                    label="Email"
+                                    placeholder='Email id'
+                                    {...form.getInputProps('email')}
+                                    />
+                                    <PasswordInput
+                                        withAsterisk
+                                        style = {{
+                                            padding:'8px',
+                                            fontSize:'16px',
+                                            fontWeight:'600',
+                                            outline:'none',
+                                            margin:'10px',
+                                        }}
+                                        className='w-[300px] md:w-[350px]'
+                                        label='Password'
+                                        placeholder='Password'
+                                        {...form.getInputProps('password')}
+                                    />
+                                    <PasswordInput
+                                        withAsterisk
+                                        style = {{
+                                            padding:'8px',
+                                            fontSize:'16px',
+                                            fontWeight:'600',
+                                            outline:'none',
+                                            margin:'10px',
+                                            // width:350
+                                        }}
+                                        className='w-[300px] md:w-[350px]'
+                                        label='Confirm Password'
+                                        placeholder='Repeat Password'
+                                        {...form.getInputProps('confirmpassword')}
+                                    />
+                                    <Button
+                                        style={{'margin':'10px','borderRadius':'10px','background':'black'}}
+                                        color='dark'
+                                        size={'md'}
+                                        type="submit"
+                                        className='w-[300px] md:w-[350px]'
+                                        >
+                                        Get Started
+                                    </Button>
+                                    <p className='text-[12px] p-2 font-[600] text-[grey] text-center flex'>
+                                        Already have an account?
+                                        <button
+                                            className='text-black'
+                                            onClick={switchLogin}
+                                            >Login
+                                        </button>
+                                    </p>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <Footer/>
+        </div>
+    );
+}
