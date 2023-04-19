@@ -1,0 +1,204 @@
+import React from 'react';
+import rocketPic from '../../images/rocket.svg';
+import googleIcon from '../../images/icons/google.svg';
+import { TextInput , Divider , PasswordInput, Anchor , Button, } from '@mantine/core';
+import { Link } from 'react-router-dom';
+import Footer from '../../layout/Footer';
+import { signInWithPopup , signInWithEmailAndPassword, GoogleAuthProvider } from 'firebase/auth';
+import { useState } from 'react';
+import { auth } from '../../config/firebaseConfig';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import * as yup from 'yup';
+import { useForm, yupResolver } from '@mantine/form';
+import { IconX, IconCheck } from '@tabler/icons-react';
+import { Progress, Text, Popover, Box } from '@mantine/core';
+import { setUser } from '../../../redux/userSlice';
+import { Alert } from '@mantine/core';
+import { IconAlertCircle } from '@tabler/icons-react';
+
+
+
+
+const schema = yup.object().shape({
+    email: yup.string().email('Please enter a valid email address').required("Enter valid email"),
+    password: yup.string().required().min(8, 'Password must be atleast 8 characters').max(16, 'Password must not exceed 16 characters').matches(
+      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/,
+      "Enter correct password"
+    )
+  }).required();
+  function PasswordRequirement({ meets, label }: { meets: boolean; label: string }) {
+    return (
+      <Text
+        color={meets ? 'teal' : 'red'}
+        sx={{ display: 'flex', alignItems: 'center' }}
+        mt={7}
+        size="sm"
+      >
+        {meets ? <IconCheck size="0.9rem" /> : <IconX size="0.9rem" />} <Box ml={10}>{label}</Box>
+      </Text>
+    );
+  }
+
+  const requirements = [
+    { re: /[0-9]/, label: 'Includes number' },
+    { re: /[a-z]/, label: 'Includes lowercase letter' },
+    { re: /[A-Z]/, label: 'Includes uppercase letter' },
+    { re: /[$&+,:;=?@#|'<>.^*()%!-]/, label: 'Includes special symbol' },
+  ];
+
+  function getStrength(password: string) {
+    let multiplier = password.length > 5 ? 0 : 1;
+
+    requirements.forEach((requirement) => {
+      if (!requirement.re.test(password)) {
+        multiplier += 1;
+      }
+    });
+
+    return Math.max(100 - (100 / (requirements.length + 1)) * multiplier, 10);
+  }
+
+
+export default function Login(clickFunction : loginProps){
+    
+    const [popoverOpened, setPopoverOpened] = useState(false);
+    const [value, setValue] = useState('');
+    const [email , setEmail] = useState('');
+    const [password , setPassword] = useState('');
+    const form = useForm({
+        validate: yupResolver(schema),
+            initialValues: {
+                email: '',
+                password: '',
+            }
+
+    });
+    const dispatch = useDispatch();
+
+    const provider = new GoogleAuthProvider();
+    const signInWithGoogle = async () => {
+      try {
+          const userDetails = await signInWithPopup(auth, provider);
+          dispatch(setUser(userDetails));
+      } catch (error : any) {
+          alert(error.message);
+      }
+  }
+
+    const switchSignUp = () => {
+        clickFunction.clickFunction();
+    }
+  const checks = requirements.map((requirement, index) => (
+    <PasswordRequirement key={index} label={requirement.label} meets={requirement.re.test(value)} />
+  ));
+
+  const strength = getStrength(value);
+  const color = strength === 100 ? 'teal' : strength > 50 ? 'yellow' : 'red';
+
+    return(
+        <div className='font-manrope'>
+            <div className=' h-auto flex-col w-full md:flex-col md:p-[2%] bg-[#E0E6EC] flex justify-center items-center'>
+                <div className='h-auto md:h-[90vh] md:w-[75%] w-[100%] mx-auto sm:grid-cols-2 grid grid-cols-1 bg-white md:rounded-[15px]'>
+                    <div className='flex-col-reverse flex md:flex-col justify-center items-center text-center'>
+                        <img src={rocketPic} alt="login pic" />
+                        <h5 className='font-bold text-[22px] p-3 font-roie tracking-[1px]'>Turn Your Ideas into products</h5>
+                    </div>
+                    <div className='bg-[#F0F3F8] flex justify-center items-center md:rounded-tr-[20px] md:rounded-br-[20px]'>
+                        <div className='w-[90%] mx-auto flex flex-col justify-center items-center p-[12px]'>
+                            <h5 className='font[20px] tracking-[1px] font-manrope font-bold text-center '>Welcome Back Login</h5>
+                            <button
+                                onClick={signInWithGoogle}
+                                className='m-5 tracking-[1px] rounded-[10px] bg-white px-4 py-2 flex w-[220px]  text-[14px] font-[600]'>
+                                <img src={googleIcon} alt="google" />
+                                &nbsp;&nbsp;&nbsp;Sign In with Google
+                            </button>
+                            <Divider label="OR" my="xs" labelPosition="center"/>
+                            <div className='w-full '>
+                                <form
+                                  className='flex flex-col items-center'
+                                  onSubmit={form.onSubmit(
+                                  (values) => {
+                                    try {
+                                      if(email!=null && password!=null){
+                                        const userDetails =
+                                                signInWithEmailAndPassword(
+                                                        auth ,
+                                                        values.email ,
+                                                        values.password);
+                                        dispatch(setUser(userDetails));
+                                    }
+                                    } catch(error){
+                                      <Alert icon={<IconAlertCircle size="1rem" />} title="Bummer!" color="red">
+                                             Something terrible happened! You made a mistake and there is no going back, your data was lost forever!
+                                      </Alert>
+
+                                    }
+                                  }
+                                )}>
+                                <TextInput
+                                    withAsterisk
+                                    style = {{
+                                        padding:'8px',
+                                        fontSize:'16px',
+                                        fontWeight:'600',
+                                        outline:'none',
+                                        margin:'10px',
+
+                                    }}
+                                    className='w-[300px] md:w-[350px]'
+                                    label="Email"
+                                    placeholder='Email id'
+                                    {...form.getInputProps('email')}
+
+                                    />
+
+                                    <div>
+
+                                    <PasswordInput
+                                        withAsterisk
+                                        style = {{
+                                          padding:'8px',
+                                          fontSize:'16px',
+                                          fontWeight:'600',
+                                          outline:'none',
+                                          marginTop:'10px',
+                                          margin:'10px',
+                                          // width:350,
+                                        }}
+                                        className='w-[300px] md:w-[350px]'
+                                        label='Password'
+                                        placeholder='Password'
+                                        {...form.getInputProps('password')}
+                                        />
+                                        </div>
+
+
+                                    <div className=' flex  mx-auto mr-[65px]  '>
+                                        <Link to='/forgot-password'>
+                                            <Anchor className='font-[600] text-[12px]'>
+                                                Forgot Password?
+                                            </Anchor>
+                                        </Link>
+                                    </div>
+                                    <Button
+                                        type='submit'
+                                        style={{'margin':'10px',borderRadius:'10px',background:'black'}}
+                                        color='dark'
+                                        className='w-[300px] md:w-[350px]'
+                                        size={'md'}>
+                                        Get Started
+                                    </Button>
+                                    </form>
+                                    <p className='text-[12px] p-2 font-[600] text-[grey] text-center flex justify-center'>
+                                        Dont have an account? <button className='text-black' onClick={switchSignUp}>Signup</button>
+                                    </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <Footer />
+        </div>
+    );
+}

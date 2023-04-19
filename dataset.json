@@ -1,4 +1,6 @@
-import code from './codes/code1.txt';
+import code1 from './codes/code1.txt';
+import code2 from './codes/code1.txt';
+
 
 [
 
@@ -41,9 +43,48 @@ import code from './codes/code1.txt';
         ],
         "preferredTheme": "Light",
         "preferredLayout": "Grid",
-        "code":[
-            './codes/code1.txt'
-        ]
+        "code":code1
+    },
+    "generate code for login using firebase9 and mantine with some basic styling" : {
+        "businessName": "ABC Inc",
+        "industry": "E-commerce",
+        "contactEmail": "johndoe@abcinc.com",
+        "website": "https://www.website.com",
+        "features": [
+            {
+                "name": "User Authentication",
+                "description": "Allow users to sign up and log in to the website",
+                "technology": "Firebase Authentication",
+                "tasks": [
+                    "Create sign up form",
+                    "Create log in form",
+                    "Implement Firebase Authentication"
+                ]
+            },
+            {
+                "name": "Product Catalog",
+                "description": "Display products on the website",
+                "technology": "Firebase Firestore",
+                "tasks": [
+                    "Create product model",
+                    "Create product list component",
+                    "Display products on the website"
+                ]
+            },
+            {
+                "name": "Shopping Cart",
+                "description": "Allow users to add products to a cart and checkout",
+                "technology": "Firebase Firestore and Firebase Functions",
+                "tasks": [
+                    "Create cart model",
+                    "Create cart component",
+                    "Implement checkout functionality with Firebase Functions"
+                ]
+            }
+        ],
+        "preferredTheme": "Light",
+        "preferredLayout": "Grid",
+        "code":code2
     }
 ]
 
